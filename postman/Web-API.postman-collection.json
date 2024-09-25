@@ -1,0 +1,386 @@
+{
+	"info": {
+		"_postman_id": "1962c316-d03e-4d18-9437-e7627c938b9b",
+		"name": "Web-API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Empty Wallet Balance",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f5006bba-5e4e-4800-badf-8ae551840799",
+						"exec": [
+							"pm.test(\"Status code is 404-Not Found\", function () { pm.response.to.have.status(404); });"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "fb342a2a-cef8-46ab-9929-d50cd186459d",
+						"exec": [
+							"var uuid = require('uuid');",
+							"pm.globals.set(\"walletId\", uuid.v4());"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/wallets/{{walletId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"wallets",
+						"{{walletId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Credit Wallet with initial balance",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "739e0c26-163c-4b74-b822-2dd17a0cfdc7",
+						"exec": [
+							"pm.test(\"Status code is 201-Created\", function () { pm.response.to.have.status(201); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"transactionId\" : \"tx123\",\n    \"coins\" : 1000\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/wallets/{{walletId}}/credit",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"wallets",
+						"{{walletId}}",
+						"credit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Wallet Balance after initial credit",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f5006bba-5e4e-4800-badf-8ae551840799",
+						"exec": [
+							"pm.test(\"Status code is 200-Ok\", function () { pm.response.to.have.status(200); });",
+							"pm.test(\"Payload as expected\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.transactionId).to.eql(\"tx123\");",
+							"    pm.expect(jsonData.version).to.eql(1);",
+							"    pm.expect(jsonData.coins).to.eql(1000);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/wallets/{{walletId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"wallets",
+						"{{walletId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Duplicate Credit",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "739e0c26-163c-4b74-b822-2dd17a0cfdc7",
+						"exec": [
+							"pm.test(\"Status code is 202-Accepted\", function () { pm.response.to.have.status(202); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"transactionId\" : \"tx123\",\n    \"coins\" : 1000\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/wallets/{{walletId}}/credit",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"wallets",
+						"{{walletId}}",
+						"credit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Debit Wallet with more than balance",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fba07a02-23d7-44e5-a728-2aa5807332e6",
+						"exec": [
+							"pm.test(\"Status code is 400-Client Error\", function () { pm.response.to.have.status(400); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"transactionId\" : \"tx120\",\n    \"coins\" : 2000\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/wallets/{{walletId}}/debit",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"wallets",
+						"{{walletId}}",
+						"debit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Debit Wallet with less than balance",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fba07a02-23d7-44e5-a728-2aa5807332e6",
+						"exec": [
+							"pm.test(\"Status code is 201-Created\", function () { pm.response.to.have.status(201); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"transactionId\" : \"tx124\",\n    \"coins\" : 456\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/wallets/{{walletId}}/debit",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"wallets",
+						"{{walletId}}",
+						"debit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Duplicate Debit",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fba07a02-23d7-44e5-a728-2aa5807332e6",
+						"exec": [
+							"pm.test(\"Status code is 202-Accepted\", function () { pm.response.to.have.status(202); });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"transactionId\" : \"tx124\",\n    \"coins\" : 456\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/wallets/{{walletId}}/debit",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"wallets",
+						"{{walletId}}",
+						"debit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Wallet Balance",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f5006bba-5e4e-4800-badf-8ae551840799",
+						"exec": [
+							"pm.test(\"Status code is 200-Ok\", function () { pm.response.to.have.status(200); });",
+							"pm.test(\"Payload as expected\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.transactionId).to.eql(\"tx124\");",
+							"    pm.expect(jsonData.version).to.eql(2);",
+							"    pm.expect(jsonData.coins).to.eql(544);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/wallets/{{walletId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"wallets",
+						"{{walletId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
