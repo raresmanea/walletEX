@@ -5,8 +5,8 @@ export class Wallet {
 
     constructor(initialBalance: number) {
         this.balance = initialBalance;
-        this.version = 0; // Start with version 0
-        this.lastTransactionId = null; // No transactions initially
+        this.version = 0; 
+        this.lastTransactionId = null; 
     }
 
     public getBalance(): number {
@@ -22,26 +22,26 @@ export class Wallet {
     }
 
     public setVersion(version: number): void {
-        this.version = version; // Setter for version
+        this.version = version; 
     }
 
     public setLastTransactionId(transactionId: string | null): void {
-        this.lastTransactionId = transactionId; // Setter for lastTransactionId
+        this.lastTransactionId = transactionId;
     }
 
     public credit(transactionId: string, amount: number): void {
         this.balance += amount;
         this.lastTransactionId = transactionId;
-        this.version += 1; // Increment version
+        this.version += 1;
     }
 
     public debit(transactionId: string, amount: number): boolean {
         if (amount > this.balance) {
-            return false; // Reject excessive debit
+            return false; 
         }
         this.balance -= amount;
         this.lastTransactionId = transactionId;
-        this.version += 1; // Increment version
+        this.version += 1; 
         return true;
     }
 }

@@ -1,12 +1,5 @@
-# Node.js dependencies
 /node_modules
-
-# Build files
 /dist
 /build
-
-# Environment variables
 .env
-
-# Coverage directory
 /coverage

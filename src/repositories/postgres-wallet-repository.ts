@@ -42,7 +42,7 @@ class PostgresWalletRepository {
         const result = await this.client.query('SELECT * FROM wallet.wallets WHERE id = $1', [walletId]);
         
         if (result.rows.length === 0) {
-            return null; // No wallet found
+            return null; 
         }
 
         const walletData = result.rows[0];
