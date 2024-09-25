@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { app, server } from '../src/app'; // Ensure server is imported
-import { PostgresWalletRepository } from '../src/repositories/PostgresWalletRepository';
+import { PostgresWalletRepository } from '../src/repositories/postgres-wallet-repository';
 
-jest.mock('../src/repositories/PostgresWalletRepository', () => {
+jest.mock('../src/repositories/postgres-wallet-repository', () => {
     let balance = 1000;
     let version = 1;
     let lastTransactionId = 'tx001'; 

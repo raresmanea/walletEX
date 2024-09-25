@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import bodyParser from 'body-parser';
 import { Wallet } from './models/wallet'; 
-import { PostgresWalletRepository } from './repositories/PostgresWalletRepository';
+import { PostgresWalletRepository } from './repositories/postgres-wallet-repository';
 
 
 const app = express();
@@ -16,8 +16,7 @@ app.get('/wallets/:id', async (req: Request, res: Response) => {
     
     // Await the result from the repository
     const wallet = await walletRepository.getWalletById(walletId); 
-    console.log(wallet);
-
+    
     if (!wallet) {
         return res.status(404).send('Wallet not found');
     }
