@@ -16,9 +16,17 @@ class PostgresWalletRepository {
             password: process.env.DB_PASSWORD,
         });
 
-        this.client.connect()
-            .then(() => this.provisionDatabase())
-            .catch(err => console.error('Connection error', err.stack));
+        this.connect();
+    }
+
+    private async connect(): Promise<void> {
+        try {
+            await this.client.connect();
+            console.log('Connected to the database successfully.');
+        } catch (err) {
+            console.error('Database connection error:', err);
+            process.exit(1); // Exit process on connection failure
+        }
     }
 
     private async provisionDatabase(): Promise<void> {
@@ -39,30 +47,52 @@ class PostgresWalletRepository {
         }
     }
     public async getWalletById(walletId: string): Promise<Wallet | null> {
-        const result = await this.client.query('SELECT * FROM wallet.wallets WHERE id = $1', [walletId]);
-        
-        if (result.rows.length === 0) {
-            return null; 
-        }
+        const query = 'SELECT * FROM wallet.wallets WHERE id = $1';
+        try {
+            const result = await this.client.query(query, [walletId]);
+            if (result.rows.length === 0) {
+                return null;
+            }
 
-        const walletData = result.rows[0];
-        const wallet = new Wallet(walletData.balance); 
-        wallet.setVersion(walletData.version); 
-        wallet.setLastTransactionId(walletData.last_transaction_id);
-        
-        return wallet;
+            const walletData = result.rows[0];
+            const wallet = new Wallet(walletData.balance);
+            wallet.setVersion(walletData.version);
+            wallet.setLastTransactionId(walletData.last_transaction_id);
+
+            return wallet;
+        } catch (err) {
+            console.error('Error fetching wallet by ID:', err);
+            throw new Error('Failed to retrieve wallet.');
+        }
     }
 
     public async saveWallet(walletId: string, wallet: Wallet): Promise<void> {
-        await this.client.query(
-            'INSERT INTO wallet.wallets (id, balance, version, last_transaction_id) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET balance = $2, version = $3, last_transaction_id = $4',
-            [walletId, wallet.getBalance(), wallet.getVersion(), wallet.getLastTransactionId()]
-        );
+        const query = `
+            INSERT INTO wallet.wallets (id, balance, version, last_transaction_id)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (id) DO UPDATE SET balance = $2, version = $3, last_transaction_id = $4;
+        `;
+
+        try {
+            await this.client.query(query, [
+                walletId,
+                wallet.getBalance(),
+                wallet.getVersion(),
+                wallet.getLastTransactionId()
+            ]);
+        } catch (err) {
+            console.error('Error saving wallet:', err);
+            throw new Error('Failed to save wallet.');
+        }
     }
 
     public async closeConnection(): Promise<void> {
-        await this.client.end();
-        console.log('Database connection closed.');
+        try {
+            await this.client.end();
+            console.log('Database connection closed.');
+        } catch (err) {
+            console.error('Error closing the database connection:', err);
+        }
     }
 }
 

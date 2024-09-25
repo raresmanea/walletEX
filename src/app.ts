@@ -1,19 +1,20 @@
 import express, { Request, Response } from "express";
 import bodyParser from 'body-parser';
-import { Wallet } from './models/wallet'; 
+import { Wallet } from './models/wallet';
 import { PostgresWalletRepository } from './repositories/postgres-wallet-repository';
+import { body, validationResult } from 'express-validator';
 
 
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080;
 const walletRepository = new PostgresWalletRepository();
 
 app.use(bodyParser.json());
 
 app.get('/wallets/:id', async (req: Request, res: Response) => {
     const walletId = req.params.id;
-    
-    const wallet = await walletRepository.getWalletById(walletId); 
+
+    const wallet = await walletRepository.getWalletById(walletId);
 
     if (!wallet) {
         return res.status(404).send('Wallet not found');
@@ -26,43 +27,65 @@ app.get('/wallets/:id', async (req: Request, res: Response) => {
     });
 });
 
-app.post('/wallets/:id/credit', async (req: Request, res: Response) => {
-    const walletId = req.params.id;
-    const { transactionId, coins } = req.body;
+app.post('/wallets/:id/credit', [
+    body('transactionId').isString(),
+    body('coins').isInt({ gt: 0 }),
+], async (req: Request, res: Response) => {
 
-    let wallet = await walletRepository.getWalletById(walletId); 
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        const walletId = req.params.id;
+        const { transactionId, coins } = req.body;
 
-    if (!wallet) {
-        wallet = new Wallet(0); 
-        walletRepository.saveWallet(walletId, wallet);
+        let wallet = await walletRepository.getWalletById(walletId);
+
+        if (!wallet) {
+            wallet = new Wallet(0);
+            walletRepository.saveWallet(walletId, wallet);
+        }
+
+        if (wallet.getLastTransactionId() === transactionId) {
+            return res.status(202).send('Transaction already processed');
+        }
+
+        wallet.credit(transactionId, coins);
+        await walletRepository.saveWallet(walletId, wallet);
+
+        res.status(201).json({
+            transactionId: transactionId,
+            version: wallet.getVersion(),
+            coins: wallet.getBalance(),
+        });
+    } catch (error) {
+        res.status(500).send('Internal server error');
     }
 
-    if (wallet.getLastTransactionId() === transactionId) {
-        return res.status(202).send('Transaction already processed'); 
-    }
-
-    wallet.credit(transactionId, coins);
-    await walletRepository.saveWallet(walletId, wallet); 
-
-    res.status(201).json({
-        transactionId: transactionId,
-        version: wallet.getVersion(),
-        coins: wallet.getBalance(),
-    });
 });
 
-app.post('/wallets/:id/debit', async (req: Request, res: Response) => {
+app.post('/wallets/:id/debit', [
+    body('transactionId').isString(),
+    body('coins').isInt({ gt: 0 }),
+], async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     const walletId = req.params.id;
     const { transactionId, coins } = req.body;
 
-    let wallet = await walletRepository.getWalletById(walletId); 
+    let wallet = await walletRepository.getWalletById(walletId);
 
     if (!wallet) {
         return res.status(404).send('Wallet not found');
     }
 
     if (wallet.getLastTransactionId() === transactionId) {
-        return res.status(202).send('Transaction already processed'); 
+        return res.status(202).send('Transaction already processed');
     }
 
     const success = wallet.debit(transactionId, coins);
@@ -93,4 +116,4 @@ process.on('SIGINT', async () => {
     });
 });
 
-export { app, server  };
+export { app, server };

@@ -4,9 +4,13 @@ export class Wallet {
     private lastTransactionId: string | null;
 
     constructor(initialBalance: number) {
+        if (initialBalance < 0) {
+            throw new Error("Initial balance cannot be negative.");
+        }
+
         this.balance = initialBalance;
-        this.version = 0; 
-        this.lastTransactionId = null; 
+        this.version = 0;
+        this.lastTransactionId = null;
     }
 
     public getBalance(): number {
@@ -22,7 +26,7 @@ export class Wallet {
     }
 
     public setVersion(version: number): void {
-        this.version = version; 
+        this.version = version;
     }
 
     public setLastTransactionId(transactionId: string | null): void {
@@ -30,18 +34,38 @@ export class Wallet {
     }
 
     public credit(transactionId: string, amount: number): void {
-        this.balance += amount;
-        this.lastTransactionId = transactionId;
-        this.version += 1;
+        if (!this.isValidTransaction(transactionId)) {
+            throw new Error("Invalid transaction ID.");
+        }
+        if (amount <= 0) {
+            throw new Error("Credit amount must be greater than zero.");
+        }
+
+        this.updateWalletState(transactionId, amount);
     }
 
     public debit(transactionId: string, amount: number): boolean {
+        if (!this.isValidTransaction(transactionId)) {
+            throw new Error("Invalid transaction ID.");
+        }
+        if (amount <= 0) {
+            throw new Error("Debit amount must be greater than zero.");
+        }
         if (amount > this.balance) {
             return false; 
         }
-        this.balance -= amount;
-        this.lastTransactionId = transactionId;
-        this.version += 1; 
+
+        this.updateWalletState(transactionId, -amount);
         return true;
+    }
+
+    private isValidTransaction(transactionId: string): boolean {
+        return transactionId !== null && transactionId.trim() !== '';
+    }
+
+    private updateWalletState(transactionId: string, amount: number): void {
+        this.balance += amount;
+        this.lastTransactionId = transactionId;
+        this.version += 1;
     }
 }
