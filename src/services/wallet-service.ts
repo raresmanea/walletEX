@@ -9,12 +9,8 @@ export class WalletService {
     }
 
     public async creditWallet(walletId: string, transactionId: string, coins: number): Promise<Wallet> {
-        let wallet = await this.walletRepository.getWalletById(walletId);
-
-        if (!wallet) {
-            wallet = new Wallet(0); // Initialize with 0 balance if wallet does not exist
-        }
-
+        let wallet = await this.walletRepository.getWalletById(walletId) || new Wallet(0);
+        
         if (wallet.getLastTransactionId() === transactionId) {
             throw new Error("Transaction already processed");
         }
@@ -26,8 +22,8 @@ export class WalletService {
     }
 
     public async debitWallet(walletId: string, transactionId: string, coins: number): Promise<Wallet> {
-        let wallet = await this.walletRepository.getWalletById(walletId);
-
+        const wallet = await this.walletRepository.getWalletById(walletId);
+        
         if (!wallet) {
             throw new Error("Wallet not found");
         }

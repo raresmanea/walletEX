@@ -10,7 +10,7 @@ jest.mock('../src/repositories/postgres-wallet-repository', () => {
     return {
         PostgresWalletRepository: jest.fn().mockImplementation(() => ({
             getWalletById: jest.fn().mockImplementation((id) => {
-                if (id === 'nonExistentWallet') return null; // Return null for the specific ID
+                if (id === 'nonExistentWallet') return null; 
                 return {
                     getLastTransactionId: () => lastTransactionId,
                     getVersion: () => version,
@@ -29,7 +29,7 @@ jest.mock('../src/repositories/postgres-wallet-repository', () => {
                     }),
                 };
             }),
-            saveWallet: jest.fn(), // You can also mock this to ensure it's not called
+            saveWallet: jest.fn(), 
             closeConnection: jest.fn(),
         })),
     };
@@ -38,9 +38,9 @@ jest.mock('../src/repositories/postgres-wallet-repository', () => {
 
 describe('Wallet API', () => {
     afterAll(async () => {
-        const repository = new PostgresWalletRepository();
+        const repository  = PostgresWalletRepository.getInstance();
         await repository.closeConnection();
-        server.close(); // Ensure the server is closed after tests
+        server.close(); 
     });
 
     test('GET /wallets/:id - should return wallet balance', async () => {
@@ -61,8 +61,8 @@ describe('Wallet API', () => {
 
         expect(response.status).toBe(201);
         expect(response.body).toHaveProperty('transactionId', 'tx002');
-        expect(response.body).toHaveProperty('version', 2); // Assuming the version increases
-        expect(response.body).toHaveProperty('coins', 1500); // Updated balance (1000 + 500)
+        expect(response.body).toHaveProperty('version', 2); 
+        expect(response.body).toHaveProperty('coins', 1500); 
     });
 
     test('POST /wallets/:id/debit - should debit the wallet', async () => {
@@ -73,15 +73,15 @@ describe('Wallet API', () => {
 
         expect(response.status).toBe(201);
         expect(response.body).toHaveProperty('transactionId', 'tx003');
-        expect(response.body).toHaveProperty('version', 3); // Assuming the version increases
-        expect(response.body).toHaveProperty('coins', 1300); // Updated balance (1500 - 200)
+        expect(response.body).toHaveProperty('version', 3); 
+        expect(response.body).toHaveProperty('coins', 1300);
     });
 
     test('POST /wallets/:id/debit - should not debit more than balance', async () => {
         const walletId = 'wallet123';
         const response = await request(app)
             .post(`/wallets/${walletId}/debit`)
-            .send({ transactionId: 'tx004', coins: 2000 }); // Attempting to debit more than the current balance
+            .send({ transactionId: 'tx004', coins: 2000 }); 
 
         expect(response.status).toBe(400);
         expect(response.text).toBe('Insufficient balance');
@@ -91,11 +91,11 @@ describe('Wallet API', () => {
         const walletId = 'wallet123';
         await request(app)
             .post(`/wallets/${walletId}/credit`)
-            .send({ transactionId: 'tx002', coins: 500 }); // First request
+            .send({ transactionId: 'tx002', coins: 500 });
 
         const response = await request(app)
             .post(`/wallets/${walletId}/credit`)
-            .send({ transactionId: 'tx002', coins: 300 }); // Duplicate request
+            .send({ transactionId: 'tx002', coins: 300 });
 
         expect(response.status).toBe(202);
         expect(response.text).toBe('Transaction already processed');
@@ -105,11 +105,11 @@ describe('Wallet API', () => {
         const walletId = 'wallet123';
         await request(app)
             .post(`/wallets/${walletId}/debit`)
-            .send({ transactionId: 'tx003', coins: 200 }); // First request
+            .send({ transactionId: 'tx003', coins: 200 });
 
         const response = await request(app)
             .post(`/wallets/${walletId}/debit`)
-            .send({ transactionId: 'tx003', coins: 100 }); // Duplicate request
+            .send({ transactionId: 'tx003', coins: 100 });
 
         expect(response.status).toBe(202);
         expect(response.text).toBe('Transaction already processed');
@@ -119,7 +119,7 @@ describe('Wallet API', () => {
         const walletId = 'wallet123';
         const response = await request(app)
             .post(`/wallets/${walletId}/debit`)
-            .send({ transactionId: 'tx007', coins: 2000 }); // Attempting to debit more than the current balance
+            .send({ transactionId: 'tx007', coins: 2000 });
 
         expect(response.status).toBe(400);
         expect(response.text).toBe('Insufficient balance');

@@ -5,9 +5,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 class PostgresWalletRepository {
+    private static instance: PostgresWalletRepository;
     private client: Client;
+    private isProvisioned: boolean = false;
 
-    constructor() {
+    private constructor() {
         this.client = new Client({
             host: process.env.DB_HOST,
             port: Number(process.env.DB_PORT),
@@ -16,13 +18,33 @@ class PostgresWalletRepository {
             password: process.env.DB_PASSWORD,
         });
 
-        this.connect().then(() => this.provisionDatabase());;
+        this.connect().then(() => this.provisionDatabase());
     }
-    
+
+    public static getInstance(): PostgresWalletRepository {
+        if (!PostgresWalletRepository.instance) {
+            PostgresWalletRepository.instance = new PostgresWalletRepository();
+        }
+        return PostgresWalletRepository.instance;
+    }
+
+    private async connect(): Promise<void> {
+        try {
+            await this.client.connect();
+            console.log('Connected to the database successfully.');
+        } catch (err) {
+            console.error('Database connection error:', err);
+            process.exit(1); // Exit process on connection failure
+        }
+    }
+
     private async provisionDatabase(): Promise<void> {
-        const createSchemaQuery = `
-            CREATE SCHEMA IF NOT EXISTS wallet;
-        `;
+        if (this.isProvisioned) {
+            console.log('Database already provisioned.');
+            return; // Skip if already provisioned
+        }
+
+        const createSchemaQuery = `CREATE SCHEMA IF NOT EXISTS wallet;`;
     
         const createTableQuery = `
             CREATE TABLE IF NOT EXISTS wallet.wallets (
@@ -34,25 +56,13 @@ class PostgresWalletRepository {
         `;
     
         try {
-            // Create the wallet schema
             await this.client.query(createSchemaQuery);
             console.log('Schema "wallet" provisioned successfully.');
-    
-            // Now create the wallets table
             await this.client.query(createTableQuery);
             console.log('Table "wallet.wallets" provisioned successfully.');
+            this.isProvisioned = true; // Mark as provisioned
         } catch (err) {
             console.error('Error provisioning database:', err);
-        }
-    }
-
-    private async connect(): Promise<void> {
-        try {
-            await this.client.connect();
-            console.log('Connected to the database successfully.');
-        } catch (err) {
-            console.error('Database connection error:', err);
-            process.exit(1); // Exit process on connection failure
         }
     }
 
