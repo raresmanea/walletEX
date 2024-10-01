@@ -16,7 +16,34 @@ class PostgresWalletRepository {
             password: process.env.DB_PASSWORD,
         });
 
-        this.connect();
+        this.connect().then(() => this.provisionDatabase());;
+    }
+    
+    private async provisionDatabase(): Promise<void> {
+        const createSchemaQuery = `
+            CREATE SCHEMA IF NOT EXISTS wallet;
+        `;
+    
+        const createTableQuery = `
+            CREATE TABLE IF NOT EXISTS wallet.wallets (
+                id UUID PRIMARY KEY,
+                balance INTEGER NOT NULL,
+                version INTEGER NOT NULL,
+                last_transaction_id VARCHAR(255)
+            );
+        `;
+    
+        try {
+            // Create the wallet schema
+            await this.client.query(createSchemaQuery);
+            console.log('Schema "wallet" provisioned successfully.');
+    
+            // Now create the wallets table
+            await this.client.query(createTableQuery);
+            console.log('Table "wallet.wallets" provisioned successfully.');
+        } catch (err) {
+            console.error('Error provisioning database:', err);
+        }
     }
 
     private async connect(): Promise<void> {
@@ -29,23 +56,6 @@ class PostgresWalletRepository {
         }
     }
 
-    private async provisionDatabase(): Promise<void> {
-        const createTableQuery = `
-            CREATE TABLE IF NOT EXISTS wallet.wallets (
-                id UUID PRIMARY KEY,
-                balance INTEGER NOT NULL,
-                version INTEGER NOT NULL,
-                last_transaction_id VARCHAR(255)
-            );
-        `;
-
-        try {
-            await this.client.query(createTableQuery);
-            console.log('Database provisioned successfully.');
-        } catch (err) {
-            console.error('Error provisioning database:', err);
-        }
-    }
     public async getWalletById(walletId: string): Promise<Wallet | null> {
         const query = 'SELECT * FROM wallet.wallets WHERE id = $1';
         try {
