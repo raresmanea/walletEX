@@ -34,14 +34,14 @@ class PostgresWalletRepository {
             console.log('Connected to the database successfully.');
         } catch (err) {
             console.error('Database connection error:', err);
-            process.exit(1); // Exit process on connection failure
+            process.exit(1);
         }
     }
 
     private async provisionDatabase(): Promise<void> {
         if (this.isProvisioned) {
             console.log('Database already provisioned.');
-            return; // Skip if already provisioned
+            return;
         }
 
         const createSchemaQuery = `CREATE SCHEMA IF NOT EXISTS wallet;`;
@@ -60,7 +60,7 @@ class PostgresWalletRepository {
             console.log('Schema "wallet" provisioned successfully.');
             await this.client.query(createTableQuery);
             console.log('Table "wallet.wallets" provisioned successfully.');
-            this.isProvisioned = true; // Mark as provisioned
+            this.isProvisioned = true; 
         } catch (err) {
             console.error('Error provisioning database:', err);
         }
@@ -86,7 +86,7 @@ class PostgresWalletRepository {
         }
     }
 
-    public async saveWallet(walletId: string, wallet: Wallet): Promise<void> {
+    public async saveWallet(walletId: string, wallet: Wallet):  Promise<Wallet> {
         const query = `
             INSERT INTO wallet.wallets (id, balance, version, last_transaction_id)
             VALUES ($1, $2, $3, $4)
@@ -95,15 +95,17 @@ class PostgresWalletRepository {
 
         try {
             await this.client.query(query, [
-                walletId,
-                wallet.getBalance(),
-                wallet.getVersion(),
-                wallet.getLastTransactionId()
+              walletId,
+              wallet.getBalance(),
+              wallet.getVersion(),
+              wallet.getLastTransactionId()
             ]);
-        } catch (err) {
+        
+            return wallet; 
+          } catch (err) {
             console.error('Error saving wallet:', err);
             throw new Error('Failed to save wallet.');
-        }
+          }
     }
 
     public async closeConnection(): Promise<void> {

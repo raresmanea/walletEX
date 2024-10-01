@@ -9,36 +9,48 @@ export class WalletService {
     }
 
     public async creditWallet(walletId: string, transactionId: string, coins: number): Promise<Wallet> {
-        let wallet = await this.walletRepository.getWalletById(walletId) || new Wallet(0);
-        
-        if (wallet.getLastTransactionId() === transactionId) {
-            throw new Error("Transaction already processed");
-        }
+        return this.walletRepository.getWalletById(walletId)
+            .then(wallet => {
+                if (wallet === null) {
+                    wallet = new Wallet(0); 
+                  }
+                if (wallet.getLastTransactionId() === transactionId) {
+                    throw new Error("Transaction already processed");
+                }
 
-        wallet.credit(transactionId, coins);
-        await this.walletRepository.saveWallet(walletId, wallet);
-
-        return wallet;
+                wallet.credit(transactionId, coins);
+                return this.walletRepository.saveWallet(walletId, wallet);
+            })
+            .then(wallet => wallet)
+            .catch(error => {
+                console.error("Error crediting wallet:", error);
+                throw error;
+            });
     }
 
     public async debitWallet(walletId: string, transactionId: string, coins: number): Promise<Wallet> {
-        const wallet = await this.walletRepository.getWalletById(walletId);
-        
-        if (!wallet) {
-            throw new Error("Wallet not found");
-        }
+        return this.walletRepository.getWalletById(walletId)
+            .then(wallet => {
+                if (!wallet) {
+                    throw new Error("Wallet not found");
+                }
 
-        if (wallet.getLastTransactionId() === transactionId) {
-            throw new Error("Transaction already processed");
-        }
+                if (wallet.getLastTransactionId() === transactionId) {
+                    throw new Error("Transaction already processed");
+                }
 
-        const success = wallet.debit(transactionId, coins);
-        if (!success) {
-            throw new Error("Insufficient balance");
-        }
+                const success = wallet.debit(transactionId, coins);
+                if (!success) {
+                    throw new Error("Insufficient balance");
+                }
 
-        await this.walletRepository.saveWallet(walletId, wallet);
-        return wallet;
+                return this.walletRepository.saveWallet(walletId, wallet);
+            })
+            .then(wallet => wallet)
+            .catch(error => {
+                console.error("Error debiting wallet:", error);
+                throw error;
+            });
     }
 
     public async getWallet(walletId: string): Promise<Wallet | null> {
