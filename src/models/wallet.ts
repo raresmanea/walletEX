@@ -33,6 +33,10 @@ export class Wallet {
         this.lastTransactionId = transactionId;
     }
 
+    public incrementVersion(): void {
+        this.version++;
+    }
+
     public credit(transactionId: string, amount: number): void {
         if (!this.isValidTransaction(transactionId)) {
             throw new Error("Invalid transaction ID.");
@@ -42,6 +46,7 @@ export class Wallet {
         }
 
         this.updateWalletState(transactionId, amount);
+        this.incrementVersion();
     }
 
     public debit(transactionId: string, amount: number): boolean {
@@ -56,6 +61,7 @@ export class Wallet {
         }
 
         this.updateWalletState(transactionId, -amount);
+        this.incrementVersion();
         return true;
     }
 
@@ -66,6 +72,5 @@ export class Wallet {
     private updateWalletState(transactionId: string, amount: number): void {
         this.balance += amount;
         this.lastTransactionId = transactionId;
-        this.version += 1;
     }
 }
